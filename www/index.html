@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="tg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080d1b">
+<title>Saidov Chat 3.0</title>
+<style>
+:root{--bg:#080d1b;--panel:#10182b;--panel2:#17223a;--text:#f5f7ff;--muted:#9aa8c7;--line:#25314d;--accent:#527bff;--accent2:#8b5cf6;--input:#0d1425;--bubble:#253c70}
+body.light{--bg:#eef2fb;--panel:#fff;--panel2:#f1f4fc;--text:#15203a;--muted:#687692;--line:#dce3f0;--accent:#4169e1;--accent2:#7c3aed;--input:#f2f5fb;--bubble:#dce7ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Arial,sans-serif;height:100dvh}
+button,input,textarea{font:inherit}
+button{cursor:pointer;border:0;border-radius:12px;padding:11px 14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:700}
+button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+button.danger{background:#bd354d}
+.hidden{display:none!important}
+#splash{position:fixed;inset:0;z-index:20;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#1b2d60 0%,#0b1125 45%,#060913 100%);transition:opacity .6s,visibility .6s}
+#splash.done{opacity:0;visibility:hidden}
+.orb{position:absolute;width:270px;height:270px;border-radius:50%;filter:blur(65px);opacity:.35;background:#4361ee;animation:float 5s ease-in-out infinite}
+.orb.two{background:#a855f7;right:-80px;bottom:5%;animation-delay:-2s}
+.splash-content{text-align:center;z-index:1;animation:rise 1s ease-out}
+.logo{width:92px;height:92px;margin:0 auto 22px;border-radius:28px;display:grid;place-items:center;font-size:38px;font-weight:900;background:linear-gradient(145deg,#5e84ff,#8b5cf6);box-shadow:0 0 55px #537aff55,inset 0 1px 0 #ffffff70;transform:rotate(-5deg)}
+.splash-title{font-size:clamp(28px,8vw,42px);font-weight:900;letter-spacing:1px}
+.splash-title span{background:linear-gradient(90deg,#7ca2ff,#c4a7ff);color:transparent;background-clip:text}
+.splash-tag{color:#aab7d9;margin-top:9px;letter-spacing:2px;font-size:11px}
+.loader{height:4px;width:130px;background:#ffffff18;border-radius:9px;margin:30px auto 0;overflow:hidden}
+.loader:after{content:"";display:block;height:100%;width:40%;background:linear-gradient(90deg,#5e84ff,#c4a7ff);border-radius:9px;animation:load 1.4s ease-in-out infinite}
+@keyframes load{from{transform:translateX(-110%)}to{transform:translateX(360%)}}
+@keyframes float{50%{transform:translate(20px,-25px) scale(1.1)}}
+@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+#authScreen{min-height:100dvh;display:grid;place-items:center;padding:18px;background:radial-gradient(ellipse at 50% 0%,#1a2a51 0%,var(--bg) 65%)}
+.auth-card{width:min(420px,100%);background:var(--panel);padding:25px;border:1px solid var(--line);border-radius:25px;box-shadow:0 20px 70px #0003}
+.brand{text-align:center;font-size:27px;font-weight:900;letter-spacing:.4px}
+.brand span{color:#829aff}
+.subtitle{text-align:center;color:var(--muted);margin:8px 0 22px}
+.field{display:block;width:100%;padding:13px 14px;border:1px solid var(--line);background:var(--input);color:var(--text);border-radius:12px;margin:10px 0;outline:none}
+.field:focus{border-color:var(--accent)}
+.auth-actions{display:flex;gap:10px}
+.auth-actions button{flex:1}
+.small-note,.hint{color:var(--muted);font-size:12px;line-height:1.5;margin-top:14px}
+#app{height:100dvh;display:flex;max-width:1300px;margin:auto;background:var(--panel);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.sidebar{width:355px;max-width:43%;border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.topbar{padding:14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:8px}
+.brand-small{font-size:19px;font-weight:900}
+.brand-small span{color:#829aff}
+.top-actions{display:flex;gap:6px}
+.icon-btn{padding:9px 10px;min-width:38px}
+.search{padding:12px;border-bottom:1px solid var(--line)}
+.search input{width:100%;padding:11px 13px;border-radius:13px;border:1px solid var(--line);background:var(--input);color:var(--text);outline:none}
+.tabs{display:flex;padding:8px;gap:5px;border-bottom:1px solid var(--line)}
+.tab{flex:1;background:transparent;color:var(--muted);padding:9px 5px;font-size:12px}
+.tab.active{background:var(--panel2);color:var(--text)}
+.chat-list{overflow:auto;flex:1}
+.chat-row{display:flex;align-items:center;gap:11px;padding:12px;cursor:pointer;border-bottom:1px solid var(--line)}
+.chat-row:hover,.chat-row.active{background:var(--panel2)}
+.avatar{width:46px;height:46px;border-radius:17px;background:linear-gradient(145deg,var(--accent),var(--accent2));display:grid;place-items:center;flex-shrink:0;font-weight:900;overflow:hidden;color:#fff}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.row-main{min-width:0;flex:1}
+.row-name{font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-last{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:5px}
+.empty-list{padding:20px;color:var(--muted);font-size:13px;line-height:1.6}
+.chat-panel{flex:1;min-width:0;display:flex;flex-direction:column}
+.chat-header{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line);min-height:72px}
+.chat-head-info{flex:1;min-width:0}
+.chat-head-name{font-weight:850}
+.chat-head-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.messages{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:9px;background:radial-gradient(ellipse at 50% 100%,#14204455,transparent 60%),var(--bg)}
+.welcome{margin:auto;text-align:center;color:var(--muted);max-width:320px;line-height:1.7}
+.welcome-icon{font-size:36px;margin-bottom:12px}
+.msg{max-width:min(78%,520px);align-self:flex-start;background:var(--panel2);padding:10px 12px;border:1px solid var(--line);border-radius:16px 16px 16px 5px;overflow-wrap:anywhere;white-space:pre-wrap}
+.msg.mine{align-self:flex-end;background:var(--bubble);border-color:transparent;border-radius:16px 16px 5px 16px}
+.msg-time{text-align:right;font-size:10px;color:var(--muted);margin-top:5px}
+.composer{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);background:var(--panel)}
+.composer input{flex:1;min-width:0;border:1px solid var(--line);outline:none;background:var(--input);color:var(--text);border-radius:16px;padding:12px 14px}
+.send-btn{border-radius:15px;width:48px;padding:0;font-size:19px}
+.secondary-bar{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--panel)}
+.secondary-bar button{flex:1;font-size:12px}
+.overlay{position:fixed;inset:0;background:#02040bcc;display:grid;place-items:center;padding:16px;z-index:10}
+.modal{background:var(--panel);width:min(450px,100%);max-height:90dvh;overflow:auto;border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 25px 90px #0006}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.modal-head h2{font-size:20px;margin:0}
+.profile-top{text-align:center;padding:12px}
+.profile-top .avatar{width:84px;height:84px;margin:0 auto 10px;font-size:27px;border-radius:26px}
+.profile-line{padding:11px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.profile-line span{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+.modal-actions{display:flex;gap:8px;margin-top:14px}
+.modal-actions button{flex:1}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#202b45;color:white;padding:12px 16px;border:1px solid #45557c;border-radius:14px;z-index:30;max-width:90%;box-shadow:0 5px 25px #0005}
+.back-btn{display:none;background:var(--panel2);color:var(--text);padding:8px 11px}
+@media(max-width:650px){
+#app{width:100%}
+.sidebar{width:100%;max-width:100%;border-right:0}
+.chat-panel{display:none}
+.chat-panel.mobile-open{display:flex}
+.sidebar.mobile-hide{display:none}
+.topbar{padding:12px}
+.messages{padding:12px}
+.chat-header{padding:10px}
+.msg{max-width:88%}
+.back-btn{display:inline-block!important}
+}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="orb"></div><div class="orb two"></div>
+  <div class="splash-content">
+    <div class="logo">S</div>
+    <div class="splash-title">SAIDOV <span>CHAT</span></div>
+    <div class="splash-tag">YOUR CHAT. YOUR WORLD.</div>
+    <div class="loader"></div>
+  </div>
+</div>
+
+<div id="authScreen" class="hidden">
+  <div class="auth-card">
+    <div class="brand">SAIDOV <span>CHAT</span></div>
+    <div class="subtitle">Хуш омадед ба ҷаҳони муошират 💎</div>
+    <input id="authName" class="field hidden" placeholder="Номи шумо">
+    <input id="authEmail" class="field" type="email" autocomplete="email" placeholder="Email">
+    <input id="authPassword" class="field" type="password" autocomplete="current-password" placeholder="Парол (камаш 6 аломат)">
+    <div class="auth-actions">
+      <button id="loginBtn">Ворид шудан</button>
+      <button id="registerBtn" class="secondary">Регистратсия</button>
+    </div>
+    <div class="small-note">Барои кор кардан, дар Firebase Authentication усули Email/Password ва Firestore-ро фаъол кунед.</div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <aside class="sidebar" id="sidebar">
+    <div class="topbar">
+      <div class="brand-small">SAIDOV <span>CHAT</span></div>
+      <div class="top-actions">
+        <button class="secondary icon-btn" id="themeBtn" title="Мавзӯъ">☾</button>
+        <button class="secondary icon-btn" id="profileBtn" title="Профил">👤</button>
+      </div>
+    </div>
+    <div class="search"><input id="userSearch" placeholder="Ҷустуҷӯи @username..."></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="chats">💬 Чатҳо</button>
+      <button class="tab" data-tab="groups">👥 Гурӯҳҳо</button>
+      <button class="tab" data-tab="channels">📢 Каналҳо</button>
+    </div>
+    <div class="chat-list" id="chatList">
+      <div class="empty-list">Чатҳо ҳоло нестанд. Барои оғоз username-ро ҷустуҷӯ кунед.</div>
+    </div>
+    <div class="secondary-bar">
+      <button class="secondary" id="newGroupBtn">＋ Гурӯҳ</button>
+      <button class="secondary" id="newChannelBtn">＋ Канал</button>
+    </div>
+  </aside>
+
+  <main class="chat-panel" id="chatPanel">
+    <div class="chat-header" id="chatHeader">
+      <div class="welcome">
+        <div class="welcome-icon">✦</div>
+        <b>Хуш омадед ба Saidov Chat 3.0</b><br>
+        Чат, гурӯҳ ё каналро интихоб кунед.
+      </div>
+    </div>
+    <div class="messages" id="messages">
+      <div class="welcome"><div class="welcome-icon">💎</div>Муоширати нав. Имкониятҳои зиёд.</div>
+    </div>
+    <form class="composer" id="composer">
+      <input id="messageInput" placeholder="Паём нависед..." autocomplete="off">
+      <button class="send-btn" type="submit">➤</button>
+    </form>
+  </main>
+</div>
+
+<div id="profileModal" class="overlay hidden">
+  <div class="modal">
+    <div class="modal-head"><h2>Профили ман</h2><button class="secondary" id="closeProfile">✕</button></div>
+    <div class="profile-top">
+      <div class="avatar" id="profileAvatar">S</div>
+      <div id="profileDisplayName" style="font-size:20px;font-weight:850">Saidov</div>
+      <div id="profileHandle" style="color:var(--muted);margin-top:4px">@username</div>
+    </div>
+    <div class="profile-line"><span>ID-и корбар</span><div id="profileUid">—</div></div>
+    <div class="profile-line"><span>Email</span><div id="profileEmail">—</div></div>
+    <div style="margin-top:15px;font-weight:750">✏️ Таҳрири профил</div>
+    <input id="editName" class="field" placeholder="Ном">
+    <input id="editUsername" class="field" placeholder="username (бе @)">
+    <label class="hint">Акси профил (ихтиёрӣ, то 700 KB)</label>
+    <input id="editPhoto" class="field" type="file" accept="image/*">
+    <div class="modal-actions">
+      <button id="saveProfileBtn">💾 Нигоҳ доштан</button>
+      <button id="logoutBtn" class="danger">Баромадан</button>
+    </div>
+  </div>
+</div>
+
+<div id="createModal" class="overlay hidden">
+  <div class="modal">
+    <div class="modal-head"><h2 id="createTitle">Эҷод кардан</h2><button class="secondary" id="closeCreate">✕</button></div>
+    <input id="createName" class="field" placeholder="Номи гурӯҳ ё канал">
+    <textarea id="createDescription" class="field" placeholder="Тавсиф (ихтиёрӣ)" rows="3"></textarea>
+    <div class="modal-actions"><button id="createSubmit">Эҷод кардан</button></div>
+    <p class="hint">Эҷод дар Firestore нигоҳ дошта мешавад. Барои даъвати иштирокчиён ва ҳуқуқҳои админ, қоидаҳои амниятро танзим кардан лозим аст.</p>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAWpbbzQvU9s_bALS3hS2Dn9ipeEIgEVyk",
+  authDomain: "moychat-f3acb.firebaseapp.com",
+  projectId: "moychat-f3acb",
+  storageBucket: "moychat-f3acb.firebasestorage.app",
+  messagingSenderId: "1007073830343",
+  appId: "1:1007073830343:web:8c031478740938274d25e2"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+const $ = id => document.getElementById(id);
+
+let currentUser = null;
+let currentProfile = null;
+let activeChat = null;
+let activeKind = 'direct';
+let messagesUnsub = null;
+let usersUnsub = null;
+let knownUsers = [];
+let chatDocs = [];
+let groupDocs = [];
+let channelDocs = [];
+let activeTab = 'chats';
+let searchTimer = null;
+let createKind = 'group';
+
+setTimeout(() => {
+  $('splash').classList.add('done');
+  setTimeout(() => {
+    if (!currentUser) $('authScreen').classList.remove('hidden');
+  }, 550);
+}, 1900);
+
+function toast(t) {
+  $('toast').textContent = t;
+  $('toast').classList.remove('hidden');
+  setTimeout(() => $('toast').classList.add('hidden'), 3200);
+}
+
+function esc(s = '') {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[c]));
+}
+
+function initial(s = 'S') {
+  return s.trim().charAt(0).toUpperCase() || 'S';
+}
+
+function avatar(u) {
+  return u && u.photo
+    ? `<div class="avatar"><img src="${esc(u.photo)}" alt=""></div>`
+    : `<div class="avatar">${esc(initial(u?.name || u?.title || 'S'))}</div>`;
+}
+
+function ttime(ts) {
+  try {
+    return ts && ts.toDate
+      ? ts.toDate().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})
+      : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function chatId(a, b) {
+  return [a, b].sort().join('_');
+}
+
+function setTheme() {
+  document.body.classList.toggle('light', localStorage.getItem('saidov_theme') === 'light');
+  $('themeBtn').textContent = document.body.classList.contains('light') ? '☀' : '☾';
+}
+
+$('themeBtn').onclick = () => {
+  localStorage.setItem('saidov_theme', document.body.classList.contains('light') ? 'dark' : 'light');
+  setTheme();
+};
+
+setTheme();
+
+$('loginBtn').onclick = login;
+
+$('registerBtn').onclick = () => {
+  if ($('authName').classList.contains('hidden')) {
+    $('authName').classList.remove('hidden');
+    $('registerBtn').textContent = 'Сохтани аккаунт';
+  } else {
+    register();
+  }
+};
+
+async function login() {
+  let email = $('authEmail').value.trim();
+  let password = $('authPassword').value;
+
+  if (!email || !password) return toast('Email ва паролро пур кунед');
+
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+  } catch (e) {
+    toast(authError(e));
+  }
+}
+
+async function register() {
+  let name = $('authName').value.trim() || 'Saidov';
+  let email = $('authEmail').value.trim();
+  let password = $('authPassword').value;
+
+  if (!email || password.length < 6) {
+    return toast('Email ворид кунед ва парол камаш 6 аломат бошад');
+  }
+
+  try {
+    let c = await auth.createUserWithEmailAndPassword(email, password);
+
+    await db.collection('users').doc(c.user.uid).set({
+      uid: c.user.uid,
+      name,
+      email,
+      username: '',
+      photo: '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge: true});
+
+    toast('Аккаунт сохта шуд');
+  } catch (e) {
+    toast(authError(e));
+  }
+}
+
+function authError(e) {
+  let m = e.code || e.message || '';
+
+  if (m.includes('email-already-in-use')) return 'Ин email аллакай истифода шудааст';
+  if (m.includes('weak-password')) return 'Парол хеле кӯтоҳ аст';
+  if (m.includes('invalid-email')) return 'Email нодуруст аст';
+  if (m.includes('wrong-password') || m.includes('invalid-credential')) {
+    return 'Email ё парол нодуруст аст';
+  }
+
+  return 'Хато: ' + m;
+}
+
+auth.onAuthStateChanged(async u => {
+  currentUser = u;
+
+  if (!u) {
+    $('app').classList.add('hidden');
+    $('authScreen').classList.remove('hidden');
+
+    if (usersUnsub) usersUnsub();
+    if (messagesUnsub) messagesUnsub();
+
+    return;
+  }
+
+  $('authScreen').classList.add('hidden');
+  $('app').classList.remove('hidden');
+
+  try {
+    await ensureProfile();
+    startUsers();
+    loadChats();
+    loadSpaces();
+  } catch (e) {
+    toast('Firebase: ' + e.message);
+  }
+});
+
+async function ensureProfile() {
+  let r = db.collection('users').doc(currentUser.uid);
+  let s = await r.get();
+
+  if (!s.exists) {
+    currentProfile = {
+      uid: currentUser.uid,
+      name: currentUser.displayName || 'Saidov',
+      email: currentUser.email,
+      username: '',
+      photo: ''
+    };
+
+    await r.set(currentProfile);
+  } else {
+    currentProfile = {
+      uid: currentUser.uid,
+      email: currentUser.email,
+      ...s.data()
+    };
+  }
+
+  renderProfile();
+}
+
+function renderProfile() {
+  if (!currentProfile) return;
+
+  $('profileDisplayName').textContent = currentProfile.name || 'Saidov';
+
+  $('profileHandle').textContent = currentProfile.username
+    ? '@' + currentProfile.username
+    : 'Username таъин нашудааст';
+
+  $('profileUid').textContent = currentUser.uid;
+  $('profileEmail').textContent = currentUser.email || currentProfile.email || '—';
+
+  $('profileAvatar').innerHTML = currentProfile.photo
+    ? `<img src="${esc(currentProfile.photo)}" alt="">`
+    : esc(initial(currentProfile.name));
+
+  $('editName').value = currentProfile.name || '';
+  $('editUsername').value = currentProfile.username || '';
+}
+
+$('profileBtn').onclick = () => {
+  $('profileModal').classList.remove('hidden');
+  renderProfile();
+};
+
+$('closeProfile').onclick = () => {
+  $('profileModal').classList.add('hidden');
+};
+
+$('logoutBtn').onclick = async () => {
+  if (messagesUnsub) messagesUnsub();
+
+  await auth.signOut();
+  $('profileModal').classList.add('hidden');
+};
+
+$('saveProfileBtn').onclick = saveProfile;
+
+async function saveProfile() {
+  let name = $('editName').value.trim();
+  let username = $('editUsername').value.trim().replace(/^@/, '').toLowerCase();
+  let file = $('editPhoto').files[0];
+
+  if (!name) return toast('Номро ворид кунед');
+
+  if (username && !/^[a-z0-9_]{3,24}$/.test(username)) {
+    return toast('Username бояд 3–24 аломат бошад');
+  }
+
+  let photo = currentProfile.photo || '';
+
+  if (file) {
+    if (file.size > 700 * 1024) {
+      return toast('Акс бояд аз 700 KB хурд бошад');
+    }
+
+    photo = await new Promise((res, rej) => {
+      let r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  try {
+    await db.runTransaction(async tx => {
+      let ur = db.collection('users').doc(currentUser.uid);
+      let old = currentProfile.username || '';
+      let nr = username ? db.collection('usernames').doc(username) : null;
+
+      if (username && username !== old) {
+        let taken = await tx.get(nr);
+
+        if (taken.exists && taken.data().uid !== currentUser.uid) {
+          throw Error('Ин username аллакай гирифта шудааст');
+        }
+
+        if (old) tx.delete(db.collection('usernames').doc(old));
+        tx.set(nr, {uid: currentUser.uid});
+      }
+
+      tx.set(ur, {
+        uid: currentUser.uid,
+        name,
+        email: currentUser.email,
+        username,
+        photo,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, {merge: true});
+    });
+
+    currentProfile = {...currentProfile, name, username, photo};
+    renderProfile();
+    $('profileModal').classList.add('hidden');
+    toast('✅ Профил нигоҳ дошта шуд!');
+  } catch (e) {
+    toast('Хатои нигоҳдорӣ: ' + e.message);
+  }
+}
+
+function startUsers() {
+  if (usersUnsub) usersUnsub();
+
+  usersUnsub = db.collection('users').onSnapshot(s => {
+    knownUsers = s.docs.map(d => d.data()).filter(u => u.uid !== currentUser.uid);
+    renderList();
+  }, e => toast('Хатои хондани users. Firestore Rules-ро санҷед.'));
+}
+
+$('userSearch').oninput = () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(searchUsers, 300);
+};
+
+async function searchUsers() {
+  let q = $('userSearch').value.trim().replace(/^@/, '').toLowerCase();
+
+  if (!q) {
+    renderList();
+    return;
+  }
+
+  let result = knownUsers.filter(u =>
+    (u.username || '').toLowerCase().includes(q) ||
+    (u.name || '').toLowerCase().includes(q)
+  );
+
+  renderList(result, true);
+}
+
+function renderList(results = null, search = false) {
+  let list = $('chatList');
+
+  if (search) {
+    if (!results.length) {
+      list.innerHTML = '<div class="empty-list">Корбар ёфт нашуд. Ӯ бояд аккаунт ва username дошта бошад.</div>';
+      return;
+    }
+
+    list.innerHTML = results.map(u => `
+      <div class="chat-row" data-uid="${esc(u.uid)}">
+        ${avatar(u)}
+        <div class="row-main">
+          <div class="row-name">${esc(u.name || 'Корбар')}</div>
+          <div class="row-last">@${esc(u.username || 'username')} · Барои чат пахш кунед</div>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-uid]').forEach(el => {
+      el.onclick = () => openDirect(el.dataset.uid);
+    });
+
+    return;
+  }
+
+  let docs = activeTab === 'chats'
+    ? chatDocs
+    : activeTab === 'groups'
+      ? groupDocs
+      : channelDocs;
+
+  if (!docs.length) {
+    list.innerHTML = `<div class="empty-list">${
+      activeTab === 'chats'
+        ? 'Чатҳо ҳоло нестанд. Username-ро ҷустуҷӯ кунед.'
+        : activeTab === 'groups'
+          ? 'Гурӯҳҳо ҳоло нестанд. Тугмаи ＋ Гурӯҳро пахш кунед.'
+          : 'Каналҳо ҳоло нестанд. Тугмаи ＋ Каналро пахш кунед.'
+    }</div>`;
+
+    return;
+  }
+
+  list.innerHTML = docs.map(c => {
+    let name = c.title ||
+      c.otherName ||
+      knownUsers.find(u => u.uid === c.otherUid)?.name ||
+      'Чат';
+
+    return `
+      <div class="chat-row ${activeChat === c.id ? 'active' : ''}" data-id="${esc(c.id)}">
+        ${avatar({name})}
+        <div class="row-main">
+          <div class="row-name">${esc(name)}</div>
+          <div class="row-last">${esc(c.lastMessage || c.description || (activeTab === 'channels' ? 'Канал' : 'Чат'))}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('[data-id]').forEach(el => {
+    el.onclick = () => {
+      let c = docs.find(x => x.id === el.dataset.id);
+
+      if (activeTab === 'chats') {
+        openDirect(c.otherUid);
+      } else {
+        openSpace(c, activeTab === 'groups' ? 'group' : 'channel');
+      }
+    };
+  });
+}
+
+document.querySelectorAll('.tab').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+
+    activeTab = b.dataset.tab;
+
+    $('userSearch').placeholder = activeTab === 'chats'
+      ? 'Ҷустуҷӯи @username...'
+      : 'Ҷустуҷӯи ' + (activeTab === 'groups' ? 'гурӯҳ' : 'канал') + '...';
+
+    $('userSearch').value = '';
+    renderList();
+  };
+});
+
+async function loadChats() {
+  try {
+    let s = await db.collection('chats')
+      .where('members', 'array-contains', currentUser.uid)
+      .get();
+
+    chatDocs = s.docs.map(d => {
+      let x = d.data();
+      let other = (x.members || []).find(id => id !== currentUser.uid);
+
+      return {
+        id: d.id,
+        otherUid: other,
+        title: x.title || '',
+        lastMessage: x.lastMessage || '',
+        updatedAt: x.updatedAt
+      };
+    });
+
+    chatDocs.sort((a, b) =>
+      (b.updatedAt?.toMillis?.() || 0) - (a.updatedAt?.toMillis?.() || 0)
+    );
+
+    renderList();
+  } catch (e) {
+    toast('Чатҳо бор нашуданд. Firestore Rules-ро санҷед.');
+  }
+}
+
+async function openDirect(uid) {
+  let other = knownUsers.find(u => u.uid === uid);
+
+  if (!other) return toast('Корбар ёфт нашуд');
+
+  let id = chatId(currentUser.uid, uid);
+  activeChat = id;
+  activeKind = 'direct';
+
+  try {
+    await db.collection('chats').doc(id).set({
+      members: [currentUser.uid, uid],
+      kind: 'direct',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge: true});
+
+    if (!chatDocs.some(c => c.id === id)) {
+      chatDocs.unshift({id, otherUid: uid, lastMessage: ''});
+    }
+
+    showHeader(other.name || 'Корбар', '@' + (other.username || 'username'));
+    subscribeMessages('chats', id);
+    renderList();
+    mobileOpen();
+  } catch (e) {
+    toast('Чат кушода нашуд: ' + e.message);
+  }
+}
+
+function showHeader(name, sub) {
+  $('chatHeader').innerHTML = `
+    <button class="back-btn secondary" id="backBtn">‹</button>
+    <div class="avatar">${esc(initial(name))}</div>
+    <div class="chat-head-info">
+      <div class="chat-head-name">${esc(name)}</div>
+      <div class="chat-head-sub">${esc(sub)}</div>
+    </div>
+  `;
+
+  $('backBtn').onclick = closeMobile;
+}
+
+function openSpace(c, kind) {
+  activeChat = c.id;
+  activeKind = kind;
+
+  showHeader(c.title, kind === 'group' ? '👥 Гурӯҳ' : '📢 Канал');
+  subscribeMessages('spaces', c.id);
+  mobileOpen();
+
+  if (kind === 'channel') {
+    $('composer').classList.add('hidden');
+  } else {
+    $('composer').classList.remove('hidden');
+  }
+}
+
+function subscribeMessages(root, id) {
+  if (messagesUnsub) messagesUnsub();
+
+  $('messages').innerHTML = '<div class="welcome">Паёмҳоро бор карда истодаем…</div>';
+
+  let ref = root === 'chats'
+    ? db.collection('chats').doc(id).collection('messages')
+    : db.collection('spaces').doc(id).collection('messages');
+
+  messagesUnsub = ref.orderBy('createdAt', 'asc').limit(300).onSnapshot(s => {
+    let box = $('messages');
+
+    if (s.empty) {
+      box.innerHTML = '<div class="welcome">Ин оғози сӯҳбат аст 👋</div>';
+      return;
+    }
+
+    box.innerHTML = s.docs.map(d => {
+      let m = d.data();
+      let mine = m.senderId === currentUser.uid;
+
+      return `
+        <div class="msg ${mine ? 'mine' : ''}">
+          ${esc(m.text || '')}
+          <div class="msg-time">${timeText(m.createdAt)}${mine ? ' · ✓' : ''}</div>
+        </div>
+      `;
+    }).join('');
+
+    box.scrollTop = box.scrollHeight;
+  }, e => toast('Паёмҳо кушода нашуданд. Қоидаҳои Firestore-ро санҷед.'));
+}
+
+function timeText(ts) {
+  return ttime(ts);
+}
+
+function mobileOpen() {
+  if (innerWidth <= 650) {
+    $('sidebar').classList.add('mobile-hide');
+    $('chatPanel').classList.add('mobile-open');
+  }
+}
+
+function closeMobile() {
+  if (innerWidth <= 650) {
+    $('sidebar').classList.remove('mobile-hide');
+    $('chatPanel').classList.remove('mobile-open');
+  }
+}
+
+$('composer').onsubmit = async e => {
+  e.preventDefault();
+
+  let text = $('messageInput').value.trim();
+
+  if (!text || !activeChat || !currentUser) return;
+
+  if (activeKind === 'channel') {
+    return toast('Дар ин версия танҳо намоиши канал фаъол аст; фиристодани постро метавон баъд илова кард.');
+  }
+
+  let input = $('messageInput');
+  input.value = '';
+
+  try {
+    let root = activeKind === 'direct' ? 'chats' : 'spaces';
+    let ref = db.collection(root).doc(activeChat);
+
+    await ref.collection('messages').add({
+      text,
+      senderId: currentUser.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await ref.set({
+      lastMessage: text,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge: true});
+
+    if (activeKind === 'direct') {
+      let c = chatDocs.find(x => x.id === activeChat);
+      if (c) c.lastMessage = text;
+      renderList();
+    }
+  } catch (e) {
+    input.value = text;
+    toast('Паём фиристода нашуд: ' + e.message);
+  }
+};
+
+$('newGroupBtn').onclick = () => openCreate('group');
+$('newChannelBtn').onclick = () => openCreate('channel');
+
+$('closeCreate').onclick = () => {
+  $('createModal').classList.add('hidden');
+};
+
+function openCreate(kind) {
+  createKind = kind;
+
+  $('createTitle').textContent = kind === 'group'
+    ? 'Сохтани гурӯҳ'
+    : 'Сохтани канал';
+
+  $('createName').placeholder = kind === 'group'
+    ? 'Номи гурӯҳ'
+    : 'Номи канал';
+
+  $('createName').value = '';
+  $('createDescription').value = '';
+  $('createModal').classList.remove('hidden');
+}
+
+$('createSubmit').onclick = async () => {
+  let title = $('createName').value.trim();
+  let description = $('createDescription').value.trim();
+
+  if (!title) return toast('Номро нависед');
+
+  try {
+    let ref = await db.collection('spaces').add({
+      title,
+      description,
+      kind: createKind,
+      ownerId: currentUser.uid,
+      members: [currentUser.uid],
+      lastMessage: '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    $('createModal').classList.add('hidden');
+
+    await loadSpaces();
+
+    activeTab = createKind === 'group' ? 'groups' : 'channels';
+
+    document.querySelectorAll('.tab').forEach(x => {
+      x.classList.toggle('active', x.dataset.tab === activeTab);
+    });
+
+    let c = [...groupDocs, ...channelDocs].find(x => x.id === ref.id);
+
+    if (c) openSpace(c, createKind);
+
+    toast(createKind === 'group' ? 'Гурӯҳ сохта шуд' : 'Канал сохта шуд');
+  } catch (e) {
+    toast('Эҷод нашуд: ' + e.message);
+  }
+};
+
+async function loadSpaces() {
+  try {
+    let s = await db.collection('spaces')
+      .where('members', 'array-contains', currentUser.uid)
+      .get();
+
+    let all = s.docs.map(d => ({id: d.id, ...d.data()}));
+
+    groupDocs = all.filter(x => x.kind === 'group');
+    channelDocs = all.filter(x => x.kind === 'channel');
+
+    renderList();
+  } catch (e) {
+    toast('Гурӯҳҳо/каналҳо бор нашуданд. Firestore Rules-ро санҷед.');
+  }
+}
+</script>
+</body>
+</html>
