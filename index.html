@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="tg">
 <head>
@@ -9,7 +10,8 @@
 :root{--bg:#080d1b;--panel:#10182b;--panel2:#17223a;--text:#f5f7ff;--muted:#9aa8c7;--line:#25314d;--accent:#527bff;--accent2:#8b5cf6;--input:#0d1425;--bubble:#253c70}
 body.light{--bg:#eef2fb;--panel:#fff;--panel2:#f1f4fc;--text:#15203a;--muted:#687692;--line:#dce3f0;--accent:#4169e1;--accent2:#7c3aed;--input:#f2f5fb;--bubble:#dce7ff}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Arial,sans-serif;height:100dvh}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Arial,sans-serif;height:100dvh;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable="true"]{font:inherit;-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default}
 button,input,textarea{font:inherit}
 button{cursor:pointer;border:0;border-radius:12px;padding:11px 14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:700}
 button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
@@ -887,6 +889,25 @@ async function loadSpaces() {
     toast('Гурӯҳҳо/каналҳо бор нашуданд. Firestore Rules-ро санҷед.');
   }
 }
+
+/* Манъи интихоби матн ва менюи нусхабардорӣ */
+document.addEventListener('contextmenu', function(e) {
+  if (!e.target.closest('input, textarea, [contenteditable="true"]')) {
+    e.preventDefault();
+  }
+});
+
+document.addEventListener('selectstart', function(e) {
+  if (!e.target.closest('input, textarea, [contenteditable="true"]')) {
+    e.preventDefault();
+  }
+});
+
+document.addEventListener('copy', function(e) {
+  if (!e.target.closest('input, textarea, [contenteditable="true"]')) {
+    e.preventDefault();
+  }
+});
 </script>
 </body>
 </html>
